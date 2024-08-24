@@ -2,7 +2,6 @@ from types import TracebackType
 import booking.constants as const
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
@@ -39,7 +38,6 @@ class Booking(webdriver.Edge):
   def land_first_page(self):
     self.get(const.BASE_URL)
     
-  
   def change_currency(self, currency=None):
     currency_element = self.find_element(By.CSS_SELECTOR, 'button[data-testid="header-currency-picker-trigger"]')
     currency_element.click()
@@ -62,3 +60,44 @@ class Booking(webdriver.Edge):
 
     first_result = self.find_element(By.ID, "autocomplete-result-0")
     first_result.click()
+
+  def select_dates(self, check_in_date, check_out_date):
+    check_in_element = self.find_element(
+      By.CSS_SELECTOR, f'span[data-date="{check_in_date}"]'
+    )
+    check_in_element.click()
+
+    check_out_element = self.find_element(
+      By.CSS_SELECTOR, f'span[data-date="{check_out_date}"]'
+    )
+    check_out_element.click()
+
+  def select_adults(self, count=1):
+    selection_element = self.find_element(By.CSS_SELECTOR, 'button[data-testid="occupancy-config"]')
+    selection_element.click()
+    
+    decrease_adults_element = self.find_element(
+      By.CSS_SELECTOR, '.dba1b3bddf.e99c25fd33.aabf155f9a.f42ee7b31a.a86bcdb87f.e137a4dfeb.af4d87ec2f'
+    )
+    adults_value_element = self.find_element(By.XPATH, "//input[@id='group_adults']/parent::div/div[@class='f71ad9bb14']/span")
+
+    while True:
+      decrease_adults_element.click()
+      adults_value = adults_value_element.text # Should give back the adults count
+
+      if int(adults_value) == 1:
+          break
+    increase_button_element = self.find_element(
+      By.XPATH,
+      "//input[@id='group_adults']/parent::div/div[@class='f71ad9bb14']/button[@class='dba1b3bddf e99c25fd33 aabf155f9a f42ee7b31a a86bcdb87f e137a4dfeb d1821e6945']"
+    )
+
+    for _ in range(count - 1):
+        increase_button_element.click()
+
+  def click_search(self):
+    search_button = self.find_element(
+      By.CSS_SELECTOR,
+      '#indexsearch form button[type="submit"]'
+    )
+    search_button.click()
