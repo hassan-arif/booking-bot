@@ -1,19 +1,30 @@
+import time
 from types import TracebackType
 import booking.constants as const
+from booking.booking_filtration import BookingFiltration
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
+from selenium.webdriver.chrome.options import Options
+import warnings
+
+warnings.filterwarnings('ignore')
 
 class Booking(webdriver.Edge):
 
   def __init__(self, teardown=False):
-    self.teardown = teardown
+    # options = Options()
+    # options.add_argument("--headless")
+    # options.add_argument("--disable-gpu")
+    # options.add_argument("--no-sandbox")
+    # options.add_argument("--disable-dev-shm-usage")
+    
     super(Booking, self).__init__()
     self.implicitly_wait(5)
     self.maximize_window()
-    self.signup_dialog=False
+    self.teardown = teardown
+    self.wait = WebDriverWait(self, 5)
 
   def __exit__(self, exc_type: type[BaseException] | None, exc: BaseException | None, traceback: TracebackType | None):
     if not self.teardown:
@@ -22,18 +33,22 @@ class Booking(webdriver.Edge):
     return super().__exit__(exc_type, exc, traceback)
 
   def close_signup_dialog(self):
-    if not self.signup_dialog:
+    times = 2
+    while times > 0:
       try:
-        WebDriverWait(self, 5).until(
-          EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, 'button[aria-label="Dismiss sign-in info."]')
+        self.wait.until(
+          EC.presence_of_element_located(
+            (By.CSS_SELECTOR, '#b2indexPage > div.a1b9d2f057.c20dffcd7d > div > div')
           )
-        ).click()
+        )
+        close = self.find_element(By.CSS_SELECTOR, 'button[aria-label="Dismiss sign-in info."]')
+        close.click()
         print(f"Closed sign-up dialog")
-        self.signup_dialog = True
+        return
       except:
         print(f"Sign-up dialog not found or could not be closed")
-    else: print("Sign-up dialog already closed")
+        self.refresh()
+      times -= 1
 
   def land_first_page(self):
     self.get(const.BASE_URL)
@@ -41,6 +56,8 @@ class Booking(webdriver.Edge):
   def change_currency(self, currency=None):
     currency_element = self.find_element(By.CSS_SELECTOR, 'button[data-testid="header-currency-picker-trigger"]')
     currency_element.click()
+
+    time.sleep(1)
     
     btns = self.find_elements(By.XPATH, "//button[@class='dba1b3bddf da38b23449 df2e3f2401 e800d43c48 a2ce59f28d']")
     for btn in btns:
@@ -101,3 +118,10 @@ class Booking(webdriver.Edge):
       '#indexsearch form button[type="submit"]'
     )
     search_button.click()
+    self.wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, 'body')))
+
+  def apply_filtrations(self):
+    filtration = BookingFiltration(driver=self)
+
+    filtration.sort_price_lowest_first()
+    filtration.apply_star_rating(4, 5)
