@@ -10,9 +10,16 @@ from selenium.webdriver.support import expected_conditions as EC
 from prettytable import PrettyTable
 
 class Booking(webdriver.Chrome):
+  """
+  A class to interact with Booking.com website.
+  """
 
   def __init__(self, teardown=False):
-    
+    """
+    Initialize the Booking class with a WebDriver instance.
+
+    :param teardown: Whether to quit the WebDriver instance when exiting the context manager.
+    """
     super(Booking, self).__init__()
     self.implicitly_wait(5)
     self.maximize_window()
@@ -20,12 +27,22 @@ class Booking(webdriver.Chrome):
     self.wait = WebDriverWait(self, 5)
 
   def __exit__(self, exc_type: type[BaseException] | None, exc: BaseException | None, traceback: TracebackType | None):
+    """
+    Exit the context manager.
+
+    :param exc_type: The type of exception that occurred.
+    :param exc: The exception that occurred.
+    :param traceback: The traceback of the exception.
+    """
     if not self.teardown:
       input()
     self.quit()
     return super().__exit__(exc_type, exc, traceback)
 
   def close_signup_dialog(self):
+    """
+    Close the sign-up dialog if it appears.
+    """
     times = 2
     while times > 0:
       try:
@@ -44,9 +61,17 @@ class Booking(webdriver.Chrome):
       times -= 1
 
   def land_first_page(self):
+    """
+    Navigate to the first page of Booking.com.
+    """
     self.get(const.BASE_URL)
     
   def change_currency(self, currency=None):
+    """
+    Change the currency of the search results.
+
+    :param currency: The currency to change to.
+    """
     currency_element = self.find_element(By.CSS_SELECTOR, 'button[data-testid="header-currency-picker-trigger"]')
     currency_element.click()
 
@@ -62,6 +87,11 @@ class Booking(webdriver.Chrome):
       except: pass
 
   def select_place_to_go(self, place_to_go):
+    """
+    Select the place to go for the search.
+
+    :param place_to_go: The place to go.
+    """
     search_field = self.find_element(By.ID, ":rh:")
     search_field.clear()
     search_field.send_keys(place_to_go)
@@ -72,6 +102,12 @@ class Booking(webdriver.Chrome):
     first_result.click()
 
   def select_dates(self, check_in_date, check_out_date):
+    """
+    Select the check-in and check-out dates for the search.
+
+    :param check_in_date: The check-in date.
+    :param check_out_date: The check-out date.
+    """
     check_in_element = self.find_element(
       By.CSS_SELECTOR, f'span[data-date="{check_in_date}"]'
     )
@@ -83,6 +119,11 @@ class Booking(webdriver.Chrome):
     check_out_element.click()
 
   def select_adults(self, count=1):
+    """
+    Select the number of adults for the search.
+
+    :param count: The number of adults.
+    """
     selection_element = self.find_element(By.CSS_SELECTOR, 'button[data-testid="occupancy-config"]')
     selection_element.click()
     
@@ -106,6 +147,9 @@ class Booking(webdriver.Chrome):
         increase_button_element.click()
 
   def click_search(self):
+    """
+    Click the search button.
+    """
     search_button = self.find_element(
       By.CSS_SELECTOR,
       '#indexsearch form button[type="submit"]'
@@ -114,12 +158,18 @@ class Booking(webdriver.Chrome):
     self.wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, 'body')))
 
   def apply_filtrations(self):
+    """
+    Apply filtrations to the search results.
+    """
     filtration = BookingFiltration(driver=self)
 
     filtration.sort_price_lowest_first()
     filtration.apply_star_rating(4, 5)
 
   def report_results(self):
+    """
+    Generate a report of the search results.
+    """
     hotel_boxes = self.find_elements(By.XPATH, '//div[@data-testid="property-card"]')
     report = BookingReport(hotel_boxes)
 
@@ -128,4 +178,3 @@ class Booking(webdriver.Chrome):
     )
     table.add_rows(report.pull_attributes())
     print(table)
-    
