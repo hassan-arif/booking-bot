@@ -2,23 +2,16 @@ import time
 from types import TracebackType
 import booking.constants as const
 from booking.booking_filtration import BookingFiltration
+from booking.booking_report import BookingReport
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-import warnings
+from prettytable import PrettyTable
 
-warnings.filterwarnings('ignore')
-
-class Booking(webdriver.Edge):
+class Booking(webdriver.Chrome):
 
   def __init__(self, teardown=False):
-    # options = Options()
-    # options.add_argument("--headless")
-    # options.add_argument("--disable-gpu")
-    # options.add_argument("--no-sandbox")
-    # options.add_argument("--disable-dev-shm-usage")
     
     super(Booking, self).__init__()
     self.implicitly_wait(5)
@@ -43,10 +36,10 @@ class Booking(webdriver.Edge):
         )
         close = self.find_element(By.CSS_SELECTOR, 'button[aria-label="Dismiss sign-in info."]')
         close.click()
-        print(f"Closed sign-up dialog")
+        # print(f"Closed sign-up dialog")
         return
       except:
-        print(f"Sign-up dialog not found or could not be closed")
+        # print(f"Sign-up dialog not found or could not be closed")
         self.refresh()
       times -= 1
 
@@ -125,3 +118,14 @@ class Booking(webdriver.Edge):
 
     filtration.sort_price_lowest_first()
     filtration.apply_star_rating(4, 5)
+
+  def report_results(self):
+    hotel_boxes = self.find_elements(By.XPATH, '//div[@data-testid="property-card"]')
+    report = BookingReport(hotel_boxes)
+
+    table = PrettyTable(
+      field_names=["Name", "Price", "Score"]
+    )
+    table.add_rows(report.pull_attributes())
+    print(table)
+    
